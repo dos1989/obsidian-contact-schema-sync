@@ -6,6 +6,7 @@ import { SchemaEditorModal } from "./schema-editor-modal";
 import { shouldCreateSchemaBeforeOpening } from "./schema-editor-launch";
 import { buildDefaultSchemaDoc, buildDefaultSchemaYaml } from "./settings-creation";
 import { cloneSettingsDraft, hasDraftChanges } from "./settings-state";
+import { canRunSettingsSync } from "./settings-sync-action";
 import { getMissingCreatablePaths, validateSettingsPaths } from "./settings-validation";
 import { isTFolderLike } from "../utils/obsidian-runtime";
 import { loadSchema } from "../schema/schema-loader";
@@ -123,6 +124,23 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
         ...missing.map((item) => `${item.label} 尚未建立：${item.path}`)
       ];
       new Notice(output.length === 0 ? "所有路徑設定正確。" : output.join("\n"), 6000);
+    };
+
+    const syncButton = actionRow.createEl("button", { text: "預覽並同步 Contacts" });
+    syncButton.onclick = async () => {
+      const syncCheck = canRunSettingsSync(this.plugin.settings, this.draftSettings);
+      if (!syncCheck.allowed) {
+        new Notice(syncCheck.reason, 5000);
+        return;
+      }
+
+      const validationErrors = validateSettingsPaths(this.draftSettings, this.getExistingEntries());
+      if (validationErrors.length > 0) {
+        new Notice(validationErrors.join("\n"), 6000);
+        return;
+      }
+
+      await this.plugin.previewSync(this.plugin.settings.defaultSyncMode);
     };
 
     const resetButton = actionRow.createEl("button", { text: "還原未儲存變更" });
