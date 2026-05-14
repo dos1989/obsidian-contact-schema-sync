@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateSettingsPaths } from "../../src/ui/settings-validation";
+import { getMissingCreatablePaths, validateSettingsPaths } from "../../src/ui/settings-validation";
 
 describe("validateSettingsPaths", () => {
   it("returns no errors when all required paths exist with expected types", () => {
@@ -19,7 +19,7 @@ describe("validateSettingsPaths", () => {
     expect(result).toEqual([]);
   });
 
-  it("reports missing or mismatched paths", () => {
+  it("reports only type mismatches as hard validation errors", () => {
     const result = validateSettingsPaths(
       {
         contactsFolder: "Contacts",
@@ -32,9 +32,24 @@ describe("validateSettingsPaths", () => {
       ]
     );
 
+    expect(result).toEqual(["Contacts folder 必須指向資料夾：Contacts"]);
+  });
+});
+
+describe("getMissingCreatablePaths", () => {
+  it("returns missing folder and files that can be created on apply", () => {
+    const result = getMissingCreatablePaths(
+      {
+        contactsFolder: "Contacts",
+        schemaYamlPath: "_config/contact-schema.yaml",
+        schemaDocPath: "_config/contact-schema.md"
+      },
+      [{ path: "_config/contact-schema.md", type: "file" }]
+    );
+
     expect(result).toEqual([
-      "Contacts folder 必須指向資料夾：Contacts",
-      "Schema YAML path 不存在：_config/contact-schema.yaml"
+      { kind: "folder", label: "Contacts folder", path: "Contacts" },
+      { kind: "file", label: "Schema YAML path", path: "_config/contact-schema.yaml" }
     ]);
   });
 });

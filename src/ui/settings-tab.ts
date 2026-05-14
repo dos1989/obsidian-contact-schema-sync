@@ -1,9 +1,10 @@
-import { Notice, PluginSettingTab, Setting, TFolder } from "obsidian";
+import { Notice, PluginSettingTab, Setting, TFolder, normalizePath } from "obsidian";
 import type ContactSchemaSyncPlugin from "../main";
 import type { PluginSettings } from "../types";
 import { PathPickerModal } from "./path-picker-modal";
+import { buildDefaultSchemaDoc, buildDefaultSchemaYaml } from "./settings-creation";
 import { cloneSettingsDraft, hasDraftChanges } from "./settings-state";
-import { validateSettingsPaths } from "./settings-validation";
+import { getMissingCreatablePaths, validateSettingsPaths } from "./settings-validation";
 
 export class ContactSchemaSettingTab extends PluginSettingTab {
   plugin: ContactSchemaSyncPlugin;
@@ -83,7 +84,12 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
     const validateButton = actionRow.createEl("button", { text: "驗證路徑" });
     validateButton.onclick = () => {
       const messages = validateSettingsPaths(this.draftSettings, this.getExistingEntries());
-      new Notice(messages.length === 0 ? "所有路徑設定正確。" : messages.join("\n"), 6000);
+      const missing = getMissingCreatablePaths(this.draftSettings, this.getExistingEntries());
+      const output = [
+        ...messages,
+        ...missing.map((item) => `${item.label} 尚未建立：${item.path}`)
+      ];
+      new Notice(output.length === 0 ? "所有路徑設定正確。" : output.join("\n"), 6000);
     };
 
     const resetButton = actionRow.createEl("button", { text: "還原未儲存變更" });
@@ -102,11 +108,73 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
         return;
       }
 
+      const missing = getMissingCreatablePaths(this.draftSettings, this.getExistingEntries());
+      if (missing.length > 0) {
+        const confirmed = window.confirm(
+          `以下項目尚未建立，是否立即建立？\n\n${missing.map((item) => `- ${item.label}: ${item.path}`).join("\n")}`
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        await this.createMissingPaths();
+      }
+
       this.plugin.settings = cloneSettingsDraft(this.draftSettings);
       await this.plugin.saveSettings();
-      new Notice("設定已儲存。");
+      new Notice("設定已儲存。", 4000);
       this.display();
     };
+  }
+
+  private async createMissingPaths(): Promise<void> {
+    const entries = this.getExistingEntries();
+    const missing = getMissingCreatablePaths(this.draftSettings, entries);
+
+    for (const item of missing) {
+      if (item.kind === "folder") {
+        await this.ensureFolder(item.path);
+        continue;
+      }
+
+      await this.ensureParentFolder(item.path);
+
+      if (item.label === "Schema YAML path") {
+        await this.app.vault.create(normalizePath(item.path), buildDefaultSchemaYaml());
+      } else if (item.label === "Schema doc path") {
+        await this.app.vault.create(normalizePath(item.path), buildDefaultSchemaDoc());
+      }
+    }
+  }
+
+  private async ensureParentFolder(filePath: string): Promise<void> {
+    const parts = normalizePath(filePath).split("/");
+    parts.pop();
+
+    if (parts.length === 0) {
+      return;
+    }
+
+    await this.ensureFolder(parts.join("/"));
+  }
+
+  private async ensureFolder(folderPath: string): Promise<void> {
+    const normalized = normalizePath(folderPath);
+    if (!normalized) {
+      return;
+    }
+
+    const parts = normalized.split("/");
+    let current = "";
+
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      if (await this.app.vault.adapter.exists(current)) {
+        continue;
+      }
+      await this.app.vault.createFolder(current);
+    }
   }
 
   private getExistingEntries(): Array<{ path: string; type: "file" | "folder" }> {
