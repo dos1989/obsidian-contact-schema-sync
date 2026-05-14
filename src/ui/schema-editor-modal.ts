@@ -3,10 +3,18 @@ import type ContactSchemaSyncPlugin from "../main";
 import { validateSchema } from "../schema/schema-validator";
 import { writeSchema } from "../schema/schema-writer";
 import type { ContactSchema, FrontmatterField } from "../types";
-import { addFieldToDraft, cloneSchemaDraft, removeFieldFromDraft, serializeSchemaPreview, type FieldGroup } from "./schema-editor-state";
+import { getSchemaEditorLabels } from "./schema-editor-layout";
+import {
+  addFieldToDraft,
+  cloneSchemaDraft,
+  removeFieldFromDraft,
+  serializeSchemaPreview,
+  type FieldGroup
+} from "./schema-editor-state";
 
 export class SchemaEditorModal extends Modal {
   private draftSchema: ContactSchema;
+  private readonly labels = getSchemaEditorLabels();
 
   constructor(
     app: ContactSchemaSyncPlugin["app"],
@@ -24,9 +32,11 @@ export class SchemaEditorModal extends Modal {
   private render(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Edit Contact Schema" });
+    contentEl.style.maxHeight = "80vh";
+    contentEl.style.overflowY = "auto";
+    contentEl.createEl("h2", { text: this.labels.title });
 
-    contentEl.createEl("h3", { text: "Basic" });
+    contentEl.createEl("h3", { text: this.labels.basic });
 
     new Setting(contentEl)
       .setName("Version")
@@ -48,18 +58,18 @@ export class SchemaEditorModal extends Modal {
         })
       );
 
-    this.renderFieldGroup(contentEl, "required", "Required Fields", "必要欄位");
-    this.renderFieldGroup(contentEl, "optional", "Optional Fields", "可選欄位");
+    this.renderFieldGroup(contentEl, "required", this.labels.required);
+    this.renderFieldGroup(contentEl, "optional", this.labels.optional);
 
-    contentEl.createEl("h3", { text: "YAML Preview" });
+    contentEl.createEl("h3", { text: this.labels.preview });
     const preview = contentEl.createEl("textarea");
     preview.value = serializeSchemaPreview(this.draftSchema);
     preview.rows = 16;
-    preview.cols = 80;
     preview.readOnly = true;
     preview.style.width = "100%";
     preview.style.fontFamily = "monospace";
     preview.style.marginTop = "0.5rem";
+    preview.style.boxSizing = "border-box";
 
     const actionRow = contentEl.createDiv();
     actionRow.style.display = "flex";
@@ -67,7 +77,7 @@ export class SchemaEditorModal extends Modal {
     actionRow.style.marginTop = "1rem";
     actionRow.style.flexWrap = "wrap";
 
-    const validateButton = actionRow.createEl("button", { text: "Validate schema" });
+    const validateButton = actionRow.createEl("button", { text: this.labels.validate });
     validateButton.onclick = () => {
       try {
         validateSchema(this.draftSchema);
@@ -77,7 +87,7 @@ export class SchemaEditorModal extends Modal {
       }
     };
 
-    const saveButton = actionRow.createEl("button", { text: "Save schema" });
+    const saveButton = actionRow.createEl("button", { text: this.labels.save });
     saveButton.onclick = async () => {
       try {
         validateSchema(this.draftSchema);
@@ -92,22 +102,16 @@ export class SchemaEditorModal extends Modal {
     };
   }
 
-  private renderFieldGroup(
-    containerEl: HTMLElement,
-    group: FieldGroup,
-    heading: string,
-    description: string
-  ): void {
+  private renderFieldGroup(containerEl: HTMLElement, group: FieldGroup, heading: string): void {
     containerEl.createEl("h3", { text: heading });
-    containerEl.createEl("p", { text: description });
 
     const fields = this.draftSchema.frontmatter[group];
     for (const [index, field] of fields.entries()) {
-      this.renderFieldEditor(containerEl, group, field, index);
+      this.renderFieldCard(containerEl, group, field, index);
     }
 
     const addButton = containerEl.createEl("button", {
-      text: group === "required" ? "Add required field" : "Add optional field"
+      text: group === "required" ? this.labels.addRequired : this.labels.addOptional
     });
     addButton.style.marginTop = "0.5rem";
     addButton.onclick = () => {
@@ -116,46 +120,73 @@ export class SchemaEditorModal extends Modal {
     };
   }
 
-  private renderFieldEditor(
+  private renderFieldCard(
     containerEl: HTMLElement,
     group: FieldGroup,
     field: FrontmatterField,
     index: number
   ): void {
-    new Setting(containerEl)
-      .setName(`${group === "required" ? "Required" : "Optional"} field #${index + 1}`)
-      .setDesc("編輯 key / type / default")
-      .addText((text) =>
-        text.setPlaceholder("key").setValue(field.key).onChange((value) => {
-          field.key = value.trim() || "new_field";
-          this.render();
-        })
-      )
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOptions({
-            string: "string",
-            date: "date",
-            number: "number",
-            boolean: "boolean",
-            list: "list"
-          })
-          .setValue(field.type)
-          .onChange((value) => {
-            field.type = value as FrontmatterField["type"];
-            this.render();
-          })
-      )
-      .addText((text) =>
-        text.setPlaceholder("default").setValue(field.default).onChange((value) => {
-          field.default = value;
-        })
-      )
-      .addButton((button) =>
-        button.setButtonText("Delete").onClick(() => {
-          removeFieldFromDraft(this.draftSchema, group, index);
-          this.render();
-        })
-      );
+    const card = containerEl.createDiv();
+    card.style.border = "1px solid var(--background-modifier-border)";
+    card.style.borderRadius = "8px";
+    card.style.padding = "12px";
+    card.style.marginTop = "0.75rem";
+    card.style.display = "flex";
+    card.style.flexDirection = "column";
+    card.style.gap = "0.75rem";
+
+    const title = card.createEl("strong", {
+      text: `${group === "required" ? this.labels.required : this.labels.optional} #${index + 1}`
+    });
+    title.style.display = "block";
+
+    this.renderFieldInput(card, this.labels.key, field.key, (value) => {
+      field.key = value.trim() || "new_field";
+    });
+
+    const typeRow = card.createDiv();
+    typeRow.style.display = "flex";
+    typeRow.style.flexDirection = "column";
+    typeRow.style.gap = "0.35rem";
+    typeRow.createEl("label", { text: this.labels.type });
+    const select = typeRow.createEl("select");
+    const options: FrontmatterField["type"][] = ["string", "date", "number", "boolean", "list"];
+    for (const option of options) {
+      const optionEl = select.createEl("option", { text: option, value: option });
+      optionEl.selected = option === field.type;
+    }
+    select.onchange = () => {
+      field.type = select.value as FrontmatterField["type"];
+      this.render();
+    };
+
+    this.renderFieldInput(card, this.labels.default, field.default, (value) => {
+      field.default = value;
+    });
+
+    const deleteButton = card.createEl("button", { text: this.labels.delete });
+    deleteButton.style.alignSelf = "flex-start";
+    deleteButton.onclick = () => {
+      removeFieldFromDraft(this.draftSchema, group, index);
+      this.render();
+    };
+  }
+
+  private renderFieldInput(
+    containerEl: HTMLElement,
+    label: string,
+    value: string,
+    onChange: (value: string) => void
+  ): void {
+    const row = containerEl.createDiv();
+    row.style.display = "flex";
+    row.style.flexDirection = "column";
+    row.style.gap = "0.35rem";
+    row.createEl("label", { text: label });
+    const input = row.createEl("input", { type: "text", value });
+    input.onchange = () => {
+      onChange(input.value);
+      this.render();
+    };
   }
 }
