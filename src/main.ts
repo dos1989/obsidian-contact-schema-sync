@@ -43,8 +43,18 @@ export default class ContactSchemaSyncPlugin extends Plugin {
       id: "edit-schema",
       name: "Contact Schema: Edit schema",
       callback: async () => {
-        const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
-        new SchemaEditorModal(this.app, this, schema).open();
+        try {
+          const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
+          new SchemaEditorModal(this.app, this, schema).open();
+        } catch (error) {
+          new Notice(
+            error instanceof Error
+              ? `打開 Schema Editor 失敗：${error.message}`
+              : "打開 Schema Editor 失敗。",
+            6000
+          );
+          console.error("[contact-schema-sync] failed to open schema editor", error);
+        }
       }
     });
 

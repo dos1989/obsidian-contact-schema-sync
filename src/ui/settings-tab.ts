@@ -2,10 +2,13 @@ import { Notice, PluginSettingTab, Setting, normalizePath } from "obsidian";
 import type ContactSchemaSyncPlugin from "../main";
 import type { PluginSettings } from "../types";
 import { PathPickerModal } from "./path-picker-modal";
+import { SchemaEditorModal } from "./schema-editor-modal";
+import { shouldCreateSchemaBeforeOpening } from "./schema-editor-launch";
 import { buildDefaultSchemaDoc, buildDefaultSchemaYaml } from "./settings-creation";
 import { cloneSettingsDraft, hasDraftChanges } from "./settings-state";
 import { getMissingCreatablePaths, validateSettingsPaths } from "./settings-validation";
 import { isTFolderLike } from "../utils/obsidian-runtime";
+import { loadSchema } from "../schema/schema-loader";
 
 export class ContactSchemaSettingTab extends PluginSettingTab {
   plugin: ContactSchemaSyncPlugin;
@@ -81,6 +84,35 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
     actionRow.style.gap = "0.75rem";
     actionRow.style.marginTop = "0.5rem";
     actionRow.style.flexWrap = "wrap";
+
+    const openEditorButton = actionRow.createEl("button", { text: "開啟 Schema Editor" });
+    openEditorButton.onclick = async () => {
+      const existingEntries = this.getExistingEntries();
+      const shouldCreate = shouldCreateSchemaBeforeOpening(this.draftSettings.schemaYamlPath, existingEntries);
+
+      if (shouldCreate) {
+        const confirmed = window.confirm(
+          `Schema YAML 檔案未建立，是否立即建立預設 schema 並打開編輯器？\n\n- ${this.draftSettings.schemaYamlPath}`
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        await this.ensureParentFolder(this.draftSettings.schemaYamlPath);
+        await this.app.vault.create(normalizePath(this.draftSettings.schemaYamlPath), buildDefaultSchemaYaml());
+      }
+
+      try {
+        const schema = await loadSchema(this.app, this.draftSettings.schemaYamlPath);
+        new SchemaEditorModal(this.app, this.plugin, schema).open();
+      } catch (error) {
+        new Notice(
+          error instanceof Error ? `打開 Schema Editor 失敗：${error.message}` : "打開 Schema Editor 失敗。",
+          6000
+        );
+      }
+    };
 
     const validateButton = actionRow.createEl("button", { text: "驗證路徑" });
     validateButton.onclick = () => {
