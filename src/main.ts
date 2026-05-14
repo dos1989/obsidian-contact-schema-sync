@@ -10,6 +10,7 @@ import { SchemaEditorModal } from "./ui/schema-editor-modal";
 import { SyncPreviewModal } from "./ui/sync-preview-modal";
 import { backupNote } from "./utils/backup";
 import { hashContent } from "./utils/hash";
+import { isTFileLike } from "./utils/obsidian-runtime";
 
 export default class ContactSchemaSyncPlugin extends Plugin {
   settings!: PluginSettings;
@@ -100,7 +101,7 @@ export default class ContactSchemaSyncPlugin extends Plugin {
 
   async checkForSchemaChanges(): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(this.settings.schemaYamlPath);
-    if (!file || !(file instanceof TFile)) {
+    if (!file || !isTFileLike(file)) {
       return;
     }
 

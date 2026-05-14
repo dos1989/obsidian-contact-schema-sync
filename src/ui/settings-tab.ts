@@ -1,10 +1,11 @@
-import { Notice, PluginSettingTab, Setting, TFolder, normalizePath } from "obsidian";
+import { Notice, PluginSettingTab, Setting, normalizePath } from "obsidian";
 import type ContactSchemaSyncPlugin from "../main";
 import type { PluginSettings } from "../types";
 import { PathPickerModal } from "./path-picker-modal";
 import { buildDefaultSchemaDoc, buildDefaultSchemaYaml } from "./settings-creation";
 import { cloneSettingsDraft, hasDraftChanges } from "./settings-state";
 import { getMissingCreatablePaths, validateSettingsPaths } from "./settings-validation";
+import { isTFolderLike } from "../utils/obsidian-runtime";
 
 export class ContactSchemaSettingTab extends PluginSettingTab {
   plugin: ContactSchemaSyncPlugin;
@@ -179,7 +180,7 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
 
   private getExistingEntries(): Array<{ path: string; type: "file" | "folder" }> {
     const folders = this.app.vault.getAllLoadedFiles().flatMap((file) => {
-      if (file instanceof TFolder) {
+      if (isTFolderLike(file)) {
         return [{ path: file.path, type: "folder" as const }];
       }
       return [];

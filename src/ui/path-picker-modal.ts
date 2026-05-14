@@ -1,4 +1,5 @@
-import { FuzzySuggestModal, TFolder, type App } from "obsidian";
+import { FuzzySuggestModal, type App } from "obsidian";
+import { isTFolderLike } from "../utils/obsidian-runtime";
 import { filterSelectablePaths, sortSelectablePaths, type PickerFilterOptions, type SelectablePath } from "./path-picker-utils";
 
 export class PathPickerModal extends FuzzySuggestModal<SelectablePath> {
@@ -12,7 +13,7 @@ export class PathPickerModal extends FuzzySuggestModal<SelectablePath> {
     super(app);
 
     const folders = app.vault.getAllLoadedFiles().flatMap((file) => {
-      if (file instanceof TFolder) {
+      if (isTFolderLike(file)) {
         return [{ path: file.path, type: "folder" as const }];
       }
       return [];
