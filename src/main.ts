@@ -1,4 +1,5 @@
 import { Notice, Plugin, TFile } from "obsidian";
+import { isBlankContactNoteContent, isPathInsideContactsFolder } from "./contacts/contact-create-detection";
 import { findContactFiles } from "./contacts/contact-finder";
 import { parseContactNote } from "./contacts/contact-parser";
 import { loadSchema } from "./schema/schema-loader";
@@ -19,6 +20,29 @@ export default class ContactSchemaSyncPlugin extends Plugin {
     this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
 
     this.addSettingTab(new ContactSchemaSettingTab(this.app, this));
+    this.registerEvent(
+      this.app.vault.on("create", async (file) => {
+        if (!isTFileLike(file) || !file.path.endsWith(".md")) {
+          return;
+        }
+
+        if (!isPathInsideContactsFolder(file.path, this.settings.contactsFolder)) {
+          return;
+        }
+
+        const content = await this.app.vault.read(file);
+        const shouldAutoApply = isBlankContactNoteContent(content);
+
+        if (!shouldAutoApply) {
+          const confirmed = window.confirm(`偵測到新的聯絡人 note，是否立即套用 template？\n\n- ${file.path}`);
+          if (!confirmed) {
+            return;
+          }
+        }
+
+        await this.applyTemplateToFile(file);
+      })
+    );
     await this.checkForSchemaChanges();
 
     this.addCommand({
@@ -65,6 +89,15 @@ export default class ContactSchemaSyncPlugin extends Plugin {
         new Notice("Create new contact from schema not implemented yet.");
       }
     });
+  }
+
+  async applyTemplateToFile(file: TFile): Promise<void> {
+    const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
+    const bodyTemplate = await this.readBodyTemplate();
+    const raw = await this.app.vault.read(file);
+    const parsed = parseContactNote(file.path, raw);
+    const report = buildSyncPreview([parsed], schema, this.settings.defaultSyncMode, bodyTemplate);
+    await applySyncPreview(this.app, new Map([[file.path, file]]), report);
   }
 
   async previewSync(mode: SyncMode): Promise<void> {
