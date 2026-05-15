@@ -13,9 +13,10 @@ const schema: ContactSchema = {
 };
 
 describe("syncSections", () => {
-  it("inserts missing schema sections", () => {
-    const result = syncSections("# Alice Chan\n", schema, "add-only");
-    expect(result.body).toContain("<!-- schema:basic-info:start -->");
+  it("inserts missing schema sections immediately after title", () => {
+    const result = syncSections("# Alice Chan\n\n# Family :\n", schema, "add-only");
+    expect(result.body).toContain("# Alice Chan\n\n<!-- schema:basic-info:start -->");
+    expect(result.body.indexOf("<!-- schema:basic-info:start -->")).toBeLessThan(result.body.indexOf("# Family :"));
     expect(result.addedSections).toEqual(["basic-info", "personal-notes"]);
   });
 
@@ -24,5 +25,11 @@ describe("syncSections", () => {
     const result = syncSections(body, schema, "add-only");
     expect(result.body).toContain("- Name:");
     expect(result.updatedSections).toEqual(["basic-info"]);
+  });
+
+  it("keeps legacy headings after managed sections", () => {
+    const body = `# Alice Chan\n\n# Family :\n\n# Occupation :\n`;
+    const result = syncSections(body, schema, "add-only");
+    expect(result.body.indexOf("# Family :")).toBeGreaterThan(result.body.indexOf("<!-- schema:personal-notes:end -->"));
   });
 });

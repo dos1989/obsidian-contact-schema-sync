@@ -22,6 +22,16 @@ describe("syncFrontmatter", () => {
     expect(result.addedFields).toEqual(["relationship", "birthday"]);
   });
 
+  it("orders schema keys before legacy keys", () => {
+    const result = syncFrontmatter(
+      { aliases: null, relationship: "Friend", name: "Alice", Gender: "F" },
+      schema,
+      "add-only"
+    );
+
+    expect(Object.keys(result.frontmatter)).toEqual(["name", "relationship", "birthday", "aliases", "Gender"]);
+  });
+
   it("removes unknown keys in full-sync mode", () => {
     const result = syncFrontmatter({ name: "Alice", legacy: "x" }, schema, "full-sync");
     expect(result.frontmatter.legacy).toBeUndefined();

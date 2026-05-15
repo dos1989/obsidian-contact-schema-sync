@@ -7,6 +7,20 @@ function renderSection(section: SchemaSection): string {
   return `${buildStartMarker(section.id)}\n${hashes} ${section.heading}\n${templateBody}${buildEndMarker(section.id)}`;
 }
 
+function splitBodyAroundManagedSections(body: string): { prefix: string; suffix: string } {
+  const titleMatch = body.match(/^(# .+?\n)(\n)?/);
+  if (!titleMatch) {
+    return { prefix: "", suffix: body.trim() };
+  }
+
+  const titleBlock = titleMatch[0].trimEnd();
+  const remaining = body.slice(titleMatch[0].length).trim();
+  return {
+    prefix: titleBlock,
+    suffix: remaining
+  };
+}
+
 export function syncSections(
   body: string,
   schema: ContactSchema,
@@ -18,40 +32,49 @@ export function syncSections(
   updatedSections: string[];
   warnings: string[];
 } {
-  let nextBody = body.trimEnd();
+  const sourceBody = body.trim();
   const addedSections: string[] = [];
   const removedSections: string[] = [];
   const updatedSections: string[] = [];
   const warnings: string[] = [];
-  let currentMarkers = new Map(findMarkerRanges(nextBody).map((marker) => [marker.id, marker]));
+  const existingMarkers = new Map(findMarkerRanges(sourceBody).map((marker) => [marker.id, marker.raw]));
   const schemaIds = new Set(schema.sections.map((section) => section.id));
+  const renderedSections: string[] = [];
 
   for (const section of schema.sections) {
-    const existing = currentMarkers.get(section.id);
+    const existing = existingMarkers.get(section.id);
     const rendered = renderSection(section);
 
     if (!existing) {
-      nextBody = `${nextBody}\n\n${rendered}`.trimStart();
       addedSections.push(section.id);
-      currentMarkers = new Map(findMarkerRanges(nextBody).map((marker) => [marker.id, marker]));
+      renderedSections.push(rendered);
       continue;
     }
 
     if (section.managed) {
-      nextBody = `${nextBody.slice(0, existing.start)}${rendered}${nextBody.slice(existing.end)}`;
       updatedSections.push(section.id);
-      currentMarkers = new Map(findMarkerRanges(nextBody).map((marker) => [marker.id, marker]));
+      renderedSections.push(rendered);
+    } else {
+      renderedSections.push(existing);
     }
   }
 
   if (mode === "full-sync") {
-    for (const marker of [...findMarkerRanges(nextBody)].reverse()) {
+    for (const marker of findMarkerRanges(sourceBody)) {
       if (!schemaIds.has(marker.id)) {
-        nextBody = `${nextBody.slice(0, marker.start)}${nextBody.slice(marker.end)}`;
         removedSections.push(marker.id);
       }
     }
   }
 
-  return { body: `${nextBody.trim()}\n`, addedSections, removedSections, updatedSections, warnings };
+  const bodyWithoutManagedBlocks = sourceBody
+    .replace(/\n?<!-- schema:[a-z0-9-]+:start -->([\s\S]*?)<!-- schema:[a-z0-9-]+:end -->\n?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  const { prefix, suffix } = splitBodyAroundManagedSections(bodyWithoutManagedBlocks);
+  const parts = [prefix, renderedSections.join("\n\n"), suffix].filter((part) => part && part.trim().length > 0);
+  const nextBody = parts.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+
+  return { body: `${nextBody}\n`, addedSections, removedSections, updatedSections, warnings };
 }
