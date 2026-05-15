@@ -25,7 +25,7 @@ export function parseBodyTemplateSections(template: string): BodyTemplateSection
 }
 
 function renderTemplateSection(section: BodyTemplateSection): string {
-  return `<!-- body-template:${section.id}:start -->\n${section.heading}\n<!-- body-template:${section.id}:end -->`;
+  return section.heading;
 }
 
 export function applyBodyTemplateSections(

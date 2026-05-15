@@ -22,10 +22,10 @@ describe("parseBodyTemplateSections", () => {
 });
 
 describe("applyBodyTemplateSections", () => {
-  it("inserts missing template sections after title with markers", () => {
+  it("inserts missing template sections after title without markers", () => {
     const result = applyBodyTemplateSections("# Ken Yan\n", parseBodyTemplateSections(template));
-    expect(result.body).toContain("<!-- body-template:family:start -->");
     expect(result.body).toContain("# Family :");
+    expect(result.body).not.toContain("<!-- body-template:");
     expect(result.addedSections).toEqual(["family", "occupation", "recreation", "message"]);
   });
 
@@ -49,6 +49,11 @@ describe("applyBodyTemplateSections", () => {
     const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
     expect(result.addedSections).toEqual([]);
     expect(result.body.match(/# Family :/g)?.length).toBe(1);
-    expect(result.body).not.toContain("<!-- body-template:family:start -->");
+  });
+
+  it("respects old markers if they already exist", () => {
+    const body = `# Ken Yan\n\n<!-- body-template:family:start -->\n# Family :\n<!-- body-template:family:end -->\n`;
+    const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
+    expect(result.body.match(/# Family :/g)?.length).toBe(1);
   });
 });
