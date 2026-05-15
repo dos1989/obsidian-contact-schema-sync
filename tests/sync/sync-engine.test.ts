@@ -9,20 +9,21 @@ const schema: ContactSchema = {
     required: [{ key: "name", type: "string", default: "" }],
     optional: [{ key: "birthday", type: "date", default: "" }]
   },
-  sections: [{ id: "basic-info", heading: "Basic Info", level: 2, managed: true, template: "- Name:" }]
+  sections: []
 };
 
 describe("buildSyncPreview", () => {
-  it("returns changed summary for a note missing fields and sections", () => {
+  it("returns changed summary for a note missing fields and body template headings", () => {
     const report = buildSyncPreview(
       [{ path: "Contacts/Alice.md", fileName: "Alice.md", frontmatter: { name: "Alice" }, body: "# Alice\n", markers: [] }],
       schema,
-      "add-only"
+      "add-only",
+      "# Family :\n\n# Message :\n"
     );
 
     expect(report.total).toBe(1);
     expect(report.updated).toBe(1);
     expect(report.notes[0].addedFields).toEqual(["birthday"]);
-    expect(report.notes[0].addedSections).toEqual(["basic-info"]);
+    expect(report.notes[0].addedSections).toEqual(["family", "message"]);
   });
 });

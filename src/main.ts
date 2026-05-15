@@ -69,12 +69,13 @@ export default class ContactSchemaSyncPlugin extends Plugin {
 
   async previewSync(mode: SyncMode): Promise<void> {
     const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
+    const bodyTemplate = await this.readBodyTemplate();
     const files = await findContactFiles(this.app, this.settings.contactsFolder);
     const contacts = await Promise.all(
       files.map(async (file) => parseContactNote(file.path, await this.app.vault.read(file)))
     );
 
-    const report = buildSyncPreview(contacts, schema, mode);
+    const report = buildSyncPreview(contacts, schema, mode, bodyTemplate);
     const fileMap = new Map(files.map((file) => [file.path, file]));
 
     new SyncPreviewModal(this.app, report, async () => {
@@ -96,9 +97,10 @@ export default class ContactSchemaSyncPlugin extends Plugin {
     }
 
     const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
+    const bodyTemplate = await this.readBodyTemplate();
     const raw = await this.app.vault.read(file);
     const parsed = parseContactNote(file.path, raw);
-    const report = buildSyncPreview([parsed], schema, mode);
+    const report = buildSyncPreview([parsed], schema, mode, bodyTemplate);
 
     new SyncPreviewModal(this.app, report, async () => {
       if (this.settings.backupBeforeSync) {
@@ -124,6 +126,15 @@ export default class ContactSchemaSyncPlugin extends Plugin {
 
     this.settings.lastKnownSchemaHash = hash;
     await this.saveSettings();
+  }
+
+  async readBodyTemplate(): Promise<string> {
+    const file = this.app.vault.getAbstractFileByPath(this.settings.schemaDocPath);
+    if (!file || !isTFileLike(file)) {
+      return "";
+    }
+
+    return await this.app.vault.read(file);
   }
 
   getActiveContactFile(): TFile | null {
