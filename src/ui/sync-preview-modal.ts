@@ -21,6 +21,7 @@ export class SyncPreviewModal extends Modal {
       section.createEl("p", { text: `Added fields: ${note.addedFields.join(", ") || "none"}` });
       section.createEl("p", { text: `Removed fields: ${note.removedFields.join(", ") || "none"}` });
       section.createEl("p", { text: `Deprecated fields: ${note.deprecatedFields.join(", ") || "none"}` });
+      section.createEl("p", { text: `Changed field types: ${note.coercedFields.join(", ") || "none"}` });
       section.createEl("p", { text: `Added sections: ${note.addedSections.join(", ") || "none"}` });
       section.createEl("p", { text: `Removed sections: ${note.removedSections.join(", ") || "none"}` });
       section.createEl("p", { text: `Updated sections: ${note.updatedSections.join(", ") || "none"}` });

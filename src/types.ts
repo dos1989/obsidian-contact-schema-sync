@@ -1,9 +1,11 @@
 export type SyncMode = "add-only" | "full-sync" | "mark-deprecated";
 
+export type FrontmatterDefaultValue = string | number | boolean | string[];
+
 export interface FrontmatterField {
   key: string;
   type: "string" | "date" | "number" | "boolean" | "list";
-  default: string;
+  default: FrontmatterDefaultValue;
 }
 
 export interface SchemaSection {
@@ -49,6 +51,7 @@ export interface NoteChangeSummary {
   addedFields: string[];
   removedFields: string[];
   deprecatedFields: string[];
+  coercedFields: string[];
   addedSections: string[];
   removedSections: string[];
   updatedSections: string[];

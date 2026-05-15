@@ -22,6 +22,56 @@ describe("syncFrontmatter", () => {
     expect(result.addedFields).toEqual(["relationship", "birthday"]);
   });
 
+  it("uses array defaults for list fields", () => {
+    const listSchema: ContactSchema = {
+      ...schema,
+      frontmatter: {
+        required: [...schema.frontmatter.required],
+        optional: [{ key: "Tags", type: "list", default: [] }]
+      }
+    };
+
+    const result = syncFrontmatter({ name: "Alice", relationship: "Friend" }, listSchema, "add-only");
+    expect(result.frontmatter.Tags).toEqual([]);
+    expect(Array.isArray(result.frontmatter.Tags)).toBe(true);
+  });
+
+  it("conservatively migrates empty string to empty list", () => {
+    const listSchema: ContactSchema = {
+      ...schema,
+      frontmatter: {
+        required: [...schema.frontmatter.required],
+        optional: [{ key: "Tags", type: "list", default: [] }]
+      }
+    };
+
+    const result = syncFrontmatter(
+      { name: "Alice", relationship: "Friend", Tags: "" },
+      listSchema,
+      "add-only"
+    );
+
+    expect(result.frontmatter.Tags).toEqual([]);
+  });
+
+  it("conservatively migrates comma-separated string to list", () => {
+    const listSchema: ContactSchema = {
+      ...schema,
+      frontmatter: {
+        required: [...schema.frontmatter.required],
+        optional: [{ key: "Tags", type: "list", default: [] }]
+      }
+    };
+
+    const result = syncFrontmatter(
+      { name: "Alice", relationship: "Friend", Tags: "營養師, Sales" },
+      listSchema,
+      "add-only"
+    );
+
+    expect(result.frontmatter.Tags).toEqual(["營養師", "Sales"]);
+  });
+
   it("orders schema keys before legacy keys", () => {
     const result = syncFrontmatter(
       { aliases: null, relationship: "Friend", name: "Alice", Gender: "F" },

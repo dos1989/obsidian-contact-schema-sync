@@ -7,7 +7,7 @@ const schema: ContactSchema = {
   noteType: "contact",
   frontmatter: {
     required: [{ key: "name", type: "string", default: "" }],
-    optional: [{ key: "birthday", type: "date", default: "" }]
+    optional: [{ key: "Tags", type: "list", default: [] }]
   },
   sections: []
 };
@@ -23,7 +23,20 @@ describe("buildSyncPreview", () => {
 
     expect(report.total).toBe(1);
     expect(report.updated).toBe(1);
-    expect(report.notes[0].addedFields).toEqual(["birthday"]);
+    expect(report.notes[0].addedFields).toEqual(["Tags"]);
     expect(report.notes[0].addedSections).toEqual(["family", "message"]);
+  });
+
+  it("marks preview as changed when field type coercion happens", () => {
+    const report = buildSyncPreview(
+      [{ path: "Contacts/Alice.md", fileName: "Alice.md", frontmatter: { name: "Alice", Tags: "營養師, Sales" }, body: "# Alice\n", markers: [] }],
+      schema,
+      "add-only",
+      ""
+    );
+
+    expect(report.updated).toBe(1);
+    expect(report.notes[0].changed).toBe(true);
+    expect(report.notes[0].coercedFields).toEqual(["Tags"]);
   });
 });

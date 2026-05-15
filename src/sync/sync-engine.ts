@@ -21,6 +21,7 @@ export function buildSyncPreview(
       fm.addedFields.length > 0 ||
       fm.removedFields.length > 0 ||
       fm.deprecatedFields.length > 0 ||
+      fm.coercedFields.length > 0 ||
       sections.addedSections.length > 0;
 
     return {
@@ -29,6 +30,7 @@ export function buildSyncPreview(
       addedFields: fm.addedFields,
       removedFields: fm.removedFields,
       deprecatedFields: fm.deprecatedFields,
+      coercedFields: fm.coercedFields,
       addedSections: sections.addedSections,
       removedSections: [],
       updatedSections: [],

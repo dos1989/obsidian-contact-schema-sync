@@ -4,6 +4,7 @@ import {
   addFieldToDraft,
   cloneSchemaDraft,
   removeFieldFromDraft,
+  serializeDefaultValue,
   serializeSchemaPreview
 } from "../../src/ui/schema-editor-state";
 
@@ -34,6 +35,21 @@ describe("schema-editor-state", () => {
       type: "string",
       default: ""
     });
+  });
+
+  it("uses array starter value for list fields", () => {
+    const draft = cloneSchemaDraft(baseSchema);
+    addFieldToDraft(draft, "optional", "list");
+
+    expect(draft.frontmatter.optional.at(-1)).toEqual({
+      key: "new_field",
+      type: "list",
+      default: []
+    });
+  });
+
+  it("serializes list defaults as comma-separated text for editor input", () => {
+    expect(serializeDefaultValue(["營養師", "Sales"])).toBe("營養師, Sales");
   });
 
   it("removes an optional field by index", () => {

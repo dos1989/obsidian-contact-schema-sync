@@ -7,7 +7,9 @@ import { getSchemaEditorLabels } from "./schema-editor-layout";
 import {
   addFieldToDraft,
   cloneSchemaDraft,
+  parseDefaultValue,
   removeFieldFromDraft,
+  serializeDefaultValue,
   serializeSchemaPreview,
   type FieldGroup
 } from "./schema-editor-state";
@@ -157,11 +159,12 @@ export class SchemaEditorModal extends Modal {
     }
     select.onchange = () => {
       field.type = select.value as FrontmatterField["type"];
+      field.default = parseDefaultValue(serializeDefaultValue(field.default), field.type);
       this.render();
     };
 
-    this.renderFieldInput(card, this.labels.default, field.default, (value) => {
-      field.default = value;
+    this.renderFieldInput(card, this.labels.default, serializeDefaultValue(field.default), (value) => {
+      field.default = parseDefaultValue(value, field.type);
     });
 
     const deleteButton = card.createEl("button", { text: this.labels.delete });
