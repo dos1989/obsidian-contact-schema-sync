@@ -43,4 +43,12 @@ describe("applyBodyTemplateSections", () => {
     expect(result.body).toContain("# Message :");
     expect(result.body).toContain("Existing text");
   });
+
+  it("does not duplicate template headings when note has no title and already contains all template headings", () => {
+    const body = `# Family :\n\n# Occupation :\n\n# Recreation :\n\n# Message :\n`;
+    const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
+    expect(result.addedSections).toEqual([]);
+    expect(result.body.match(/# Family :/g)?.length).toBe(1);
+    expect(result.body).not.toContain("<!-- body-template:family:start -->");
+  });
 });

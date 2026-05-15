@@ -12,6 +12,10 @@ function slugifyHeading(heading: string): string {
     .replace(/\s+/g, "-");
 }
 
+function looksLikeTemplateHeading(heading: string, templateSections: BodyTemplateSection[]): boolean {
+  return templateSections.some((section) => section.heading === heading);
+}
+
 export function parseBodyTemplateSections(template: string): BodyTemplateSection[] {
   const matches = template.match(/^#+\s.*$/gm) ?? [];
   return matches.map((heading) => ({
@@ -32,9 +36,11 @@ export function applyBodyTemplateSections(
   addedSections: string[];
 } {
   const source = body.trim();
-  const titleMatch = source.match(/^(# .+?)(\n|$)/);
-  const title = titleMatch?.[1] ?? "";
-  const remainder = titleMatch ? source.slice(titleMatch[0].length).trim() : source;
+  const firstHeadingMatch = source.match(/^(# .+?)(\n|$)/);
+  const firstHeading = firstHeadingMatch?.[1] ?? "";
+  const hasRealTitle = firstHeading.length > 0 && !looksLikeTemplateHeading(firstHeading, templateSections);
+  const title = hasRealTitle ? firstHeading : "";
+  const remainder = hasRealTitle && firstHeadingMatch ? source.slice(firstHeadingMatch[0].length).trim() : source;
   const addedSections: string[] = [];
   const renderedMissing: string[] = [];
 
