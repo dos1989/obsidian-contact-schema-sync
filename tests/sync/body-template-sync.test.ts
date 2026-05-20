@@ -23,21 +23,21 @@ describe("parseBodyTemplateSections", () => {
 
 describe("applyBodyTemplateSections", () => {
   it("inserts missing template sections after title without markers", () => {
-    const result = applyBodyTemplateSections("# Ken Yan\n", parseBodyTemplateSections(template));
+    const result = applyBodyTemplateSections("# Sample Contact\n", parseBodyTemplateSections(template));
     expect(result.body).toContain("# Family :");
     expect(result.body).not.toContain("<!-- body-template:");
     expect(result.addedSections).toEqual(["family", "occupation", "recreation", "message"]);
   });
 
   it("does not overwrite existing same-heading content", () => {
-    const body = `# Ken Yan\n\n# Family :\nExisting text\n`;
+    const body = `# Sample Contact\n\n# Family :\nExisting text\n`;
     const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
     expect(result.body).toContain("# Family :\nExisting text");
     expect(result.body.match(/# Family :/g)?.length).toBe(1);
   });
 
   it("inserts missing template sections after existing body content when title exists", () => {
-    const body = `# Ken Yan\n\n# Family :\nExisting text\n\n# Recreation :\nStuff\n`;
+    const body = `# Sample Contact\n\n# Family :\nExisting text\n\n# Recreation :\nStuff\n`;
     const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
     expect(result.body).toContain("# Occupation :");
     expect(result.body).toContain("# Message :");
@@ -52,7 +52,7 @@ describe("applyBodyTemplateSections", () => {
   });
 
   it("respects old markers if they already exist", () => {
-    const body = `# Ken Yan\n\n<!-- body-template:family:start -->\n# Family :\n<!-- body-template:family:end -->\n`;
+    const body = `# Sample Contact\n\n<!-- body-template:family:start -->\n# Family :\n<!-- body-template:family:end -->\n`;
     const result = applyBodyTemplateSections(body, parseBodyTemplateSections(template));
     expect(result.body.match(/# Family :/g)?.length).toBe(1);
   });

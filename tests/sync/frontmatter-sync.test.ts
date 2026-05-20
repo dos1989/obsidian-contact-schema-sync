@@ -17,8 +17,8 @@ const schema: ContactSchema = {
 
 describe("syncFrontmatter", () => {
   it("adds missing schema keys", () => {
-    const result = syncFrontmatter({ name: "Alice" }, schema, "add-only");
-    expect(result.frontmatter).toEqual({ name: "Alice", relationship: "", birthday: "" });
+    const result = syncFrontmatter({ name: "Sample Contact" }, schema, "add-only");
+    expect(result.frontmatter).toEqual({ name: "Sample Contact", relationship: "", birthday: "" });
     expect(result.addedFields).toEqual(["relationship", "birthday"]);
   });
 
@@ -31,7 +31,7 @@ describe("syncFrontmatter", () => {
       }
     };
 
-    const result = syncFrontmatter({ name: "Alice", relationship: "Friend" }, listSchema, "add-only");
+    const result = syncFrontmatter({ name: "Sample Contact", relationship: "Friend" }, listSchema, "add-only");
     expect(result.frontmatter.Tags).toEqual([]);
     expect(Array.isArray(result.frontmatter.Tags)).toBe(true);
   });
@@ -46,7 +46,7 @@ describe("syncFrontmatter", () => {
     };
 
     const result = syncFrontmatter(
-      { name: "Alice", relationship: "Friend", Tags: "" },
+      { name: "Sample Contact", relationship: "Friend", Tags: "" },
       listSchema,
       "add-only"
     );
@@ -64,7 +64,7 @@ describe("syncFrontmatter", () => {
     };
 
     const result = syncFrontmatter(
-      { name: "Alice", relationship: "Friend", Tags: "營養師, Sales" },
+      { name: "Sample Contact", relationship: "Friend", Tags: "營養師, Sales" },
       listSchema,
       "add-only"
     );
@@ -74,7 +74,7 @@ describe("syncFrontmatter", () => {
 
   it("orders schema keys before legacy keys", () => {
     const result = syncFrontmatter(
-      { aliases: null, relationship: "Friend", name: "Alice", Gender: "F" },
+      { aliases: null, relationship: "Friend", name: "Sample Contact", Gender: "F" },
       schema,
       "add-only"
     );
@@ -83,13 +83,13 @@ describe("syncFrontmatter", () => {
   });
 
   it("removes unknown keys in full-sync mode", () => {
-    const result = syncFrontmatter({ name: "Alice", legacy: "x" }, schema, "full-sync");
+    const result = syncFrontmatter({ name: "Sample Contact", legacy: "x" }, schema, "full-sync");
     expect(result.frontmatter.legacy).toBeUndefined();
     expect(result.removedFields).toEqual(["legacy"]);
   });
 
   it("marks unknown keys as deprecated in mark-deprecated mode", () => {
-    const result = syncFrontmatter({ name: "Alice", legacy: "x" }, schema, "mark-deprecated");
+    const result = syncFrontmatter({ name: "Sample Contact", legacy: "x" }, schema, "mark-deprecated");
     expect(result.frontmatter.legacy).toBe("x");
     expect(result.deprecatedFields).toEqual(["legacy"]);
   });

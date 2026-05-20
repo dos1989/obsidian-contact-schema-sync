@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { parseContactNote } from "../../src/contacts/contact-parser";
 
 const input = `---
-name: Alice Chan
+name: Sample Contact
 relationship: Friend
 ---
 
-# Alice Chan
+# Sample Contact
 
 <!-- schema:basic-info:start -->
 ## Basic Info
@@ -16,13 +16,13 @@ relationship: Friend
 
 describe("parseContactNote", () => {
   it("extracts frontmatter and body", () => {
-    const parsed = parseContactNote("Contacts/Alice Chan.md", input);
-    expect(parsed.frontmatter.name).toBe("Alice Chan");
-    expect(parsed.body).toContain("# Alice Chan");
+    const parsed = parseContactNote("Contacts/Sample Contact.md", input);
+    expect(parsed.frontmatter.name).toBe("Sample Contact");
+    expect(parsed.body).toContain("# Sample Contact");
   });
 
   it("finds managed schema markers", () => {
-    const parsed = parseContactNote("Contacts/Alice Chan.md", input);
+    const parsed = parseContactNote("Contacts/Sample Contact.md", input);
     expect(parsed.markers.map((marker) => marker.id)).toEqual(["basic-info"]);
   });
 });

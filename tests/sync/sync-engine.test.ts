@@ -15,7 +15,7 @@ const schema: ContactSchema = {
 describe("buildSyncPreview", () => {
   it("returns changed summary for a note missing fields and body template headings", () => {
     const report = buildSyncPreview(
-      [{ path: "Contacts/Alice.md", fileName: "Alice.md", frontmatter: { name: "Alice" }, body: "# Alice\n", markers: [] }],
+      [{ path: "Contacts/Sample Contact.md", fileName: "Sample Contact.md", frontmatter: { name: "Sample Contact" }, body: "# Sample Contact\n", markers: [] }],
       schema,
       "add-only",
       "# Family :\n\n# Message :\n"
@@ -29,7 +29,7 @@ describe("buildSyncPreview", () => {
 
   it("marks preview as changed when field type coercion happens", () => {
     const report = buildSyncPreview(
-      [{ path: "Contacts/Alice.md", fileName: "Alice.md", frontmatter: { name: "Alice", Tags: "營養師, Sales" }, body: "# Alice\n", markers: [] }],
+      [{ path: "Contacts/Sample Contact.md", fileName: "Sample Contact.md", frontmatter: { name: "Sample Contact", Tags: "營養師, Sales" }, body: "# Sample Contact\n", markers: [] }],
       schema,
       "add-only",
       ""

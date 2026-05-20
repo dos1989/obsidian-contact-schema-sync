@@ -231,3 +231,7 @@ Current known limitations:
 
 GitHub:
 `https://github.com/dos1989/obsidian-contact-schema-sync`
+
+## License
+
+MIT
