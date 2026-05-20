@@ -79,13 +79,13 @@ Use this for the **body template**.
 Example:
 
 ```md
-# Family :
+# Profile
 
-# Occupation :
+# Work
 
-# Recreation :
+# Interests
 
-# Message :
+# Notes
 ```
 
 ---
