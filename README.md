@@ -99,7 +99,7 @@ Example:
    - **Contacts folder**
    - **Schema YAML path**
    - **Schema doc path**
-5. If the files do not exist yet, use **套用設定** and let the plugin create them.
+5. If the files do not exist yet, use **Apply Settings** and let the plugin create them.
 
 ---
 
@@ -114,13 +114,13 @@ The path to the properties schema file.
 ### Schema doc path
 The path to the Markdown body template file.
 
-### 啟用啟動時 existing contacts 檢查
+### Enable existing contacts startup check
 When enabled:
 - the plugin checks existing contact notes once at startup
 - it shows a single summary notice if some notes can be updated
 - it does **not** auto-apply changes
 
-### 啟用空白新聯絡人筆記自動套用
+### Enable auto-apply for new blank contact notes
 When enabled:
 - if you create a **new blank markdown note** inside the contacts folder
 - the plugin auto-applies the configured schema/template
@@ -133,7 +133,7 @@ This is only for **new blank notes**, not existing notes.
 
 ### Edit properties schema
 Use:
-- **開啟 Schema Editor** in settings
+- **Open Schema Editor** in settings
 - or command: **Contact Schema: Edit schema**
 
 Schema Editor v1 currently supports:
@@ -148,7 +148,7 @@ Schema Editor v1 currently supports:
 
 ### Sync existing contacts
 Use:
-- **預覽並同步 Contacts** in settings
+- **Preview and Sync Contacts** in settings
 - or command: **Contact Schema: Sync all contacts**
 
 This opens a preview modal first.
@@ -206,7 +206,7 @@ Not every possible type migration is fully generalized yet.
 ### For existing contacts
 1. Edit `contact-schema.yaml`
 2. Edit `contact-schema.md`
-3. Run **預覽並同步 Contacts**
+3. Run **Preview and Sync Contacts**
 4. Review preview
 5. Apply changes
 
