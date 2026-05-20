@@ -232,6 +232,11 @@ Current known limitations:
 GitHub:
 `https://github.com/dos1989/obsidian-contact-schema-sync`
 
+## Open source
+
+This repository is public and released under the MIT license.
+GitHub Issues are enabled for bug reports and feature requests.
+
 ## License
 
 MIT
