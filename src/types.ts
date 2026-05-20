@@ -34,6 +34,8 @@ export interface PluginSettings {
   promptOnSchemaChange: boolean;
   dryRunByDefault: boolean;
   backupBeforeSync: boolean;
+  checkExistingContactsOnStartup: boolean;
+  autoApplyNewBlankContacts: boolean;
   lastKnownSchemaHash: string;
 }
 

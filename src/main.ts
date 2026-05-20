@@ -1,5 +1,11 @@
 import { Notice, Plugin, TFile } from "obsidian";
 import { isBlankContactNoteContent, isPathInsideContactsFolder } from "./contacts/contact-create-detection";
+import {
+  buildStartupBaseline,
+  isTrueNewContactFile
+} from "./contacts/contact-create-queue";
+import { buildExistingContactsSummary } from "./contacts/existing-contact-check";
+import { shouldAutoApplyNewBlankContact } from "./contacts/new-contact-policy";
 import { findContactFiles } from "./contacts/contact-finder";
 import { parseContactNote } from "./contacts/contact-parser";
 import { loadSchema } from "./schema/schema-loader";
@@ -15,9 +21,13 @@ import { isTFileLike } from "./utils/obsidian-runtime";
 
 export default class ContactSchemaSyncPlugin extends Plugin {
   settings!: PluginSettings;
+  private knownContactFiles = new Set<string>();
 
   async onload(): Promise<void> {
     this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+
+    const existingContactFiles = await findContactFiles(this.app, this.settings.contactsFolder);
+    this.knownContactFiles = buildStartupBaseline(existingContactFiles.map((file) => file.path));
 
     this.addSettingTab(new ContactSchemaSettingTab(this.app, this));
     this.registerEvent(
@@ -30,20 +40,25 @@ export default class ContactSchemaSyncPlugin extends Plugin {
           return;
         }
 
-        const content = await this.app.vault.read(file);
-        const shouldAutoApply = isBlankContactNoteContent(content);
+        if (!isTrueNewContactFile(file.path, this.knownContactFiles)) {
+          return;
+        }
 
-        if (!shouldAutoApply) {
-          const confirmed = window.confirm(`偵測到新的聯絡人 note，是否立即套用 template？\n\n- ${file.path}`);
-          if (!confirmed) {
-            return;
-          }
+        this.knownContactFiles.add(file.path);
+
+        const content = await this.app.vault.read(file);
+        if (!shouldAutoApplyNewBlankContact(this.settings.autoApplyNewBlankContacts, isBlankContactNoteContent(content))) {
+          return;
         }
 
         await this.applyTemplateToFile(file);
       })
     );
     await this.checkForSchemaChanges();
+
+    if (this.settings.checkExistingContactsOnStartup) {
+      await this.checkExistingContactsOnStartup();
+    }
 
     this.addCommand({
       id: "sync-all-contacts",
@@ -89,6 +104,20 @@ export default class ContactSchemaSyncPlugin extends Plugin {
         new Notice("Create new contact from schema not implemented yet.");
       }
     });
+  }
+
+  async checkExistingContactsOnStartup(): Promise<void> {
+    const schema = await loadSchema(this.app, this.settings.schemaYamlPath);
+    const bodyTemplate = await this.readBodyTemplate();
+    const files = await findContactFiles(this.app, this.settings.contactsFolder);
+    const contacts = await Promise.all(
+      files.map(async (file) => parseContactNote(file.path, await this.app.vault.read(file)))
+    );
+    const report = buildSyncPreview(contacts, schema, this.settings.defaultSyncMode, bodyTemplate);
+    const summary = buildExistingContactsSummary(report.updated);
+    if (summary) {
+      new Notice(summary, 7000);
+    }
   }
 
   async applyTemplateToFile(file: TFile): Promise<void> {

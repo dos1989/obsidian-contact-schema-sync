@@ -8,5 +8,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   promptOnSchemaChange: true,
   dryRunByDefault: true,
   backupBeforeSync: true,
+  checkExistingContactsOnStartup: false,
+  autoApplyNewBlankContacts: true,
   lastKnownSchemaHash: ""
 };

@@ -75,6 +75,24 @@ export class ContactSchemaSettingTab extends PluginSettingTab {
       }
     });
 
+    new Setting(containerEl)
+      .setName("啟用啟動時 existing contacts 檢查")
+      .setDesc("開 app / 開 session 時，只做一次 existing contacts 可更新摘要提示")
+      .addToggle((toggle) =>
+        toggle.setValue(this.draftSettings.checkExistingContactsOnStartup).onChange((value) => {
+          this.draftSettings.checkExistingContactsOnStartup = value;
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("啟用空白新聯絡人筆記自動套用")
+      .setDesc("只對新建且空白的 contacts folder markdown 筆記自動套用 template")
+      .addToggle((toggle) =>
+        toggle.setValue(this.draftSettings.autoApplyNewBlankContacts).onChange((value) => {
+          this.draftSettings.autoApplyNewBlankContacts = value;
+        })
+      );
+
     const status = containerEl.createEl("p", {
       text: dirty ? "有未儲存變更" : "目前設定已同步"
     });
