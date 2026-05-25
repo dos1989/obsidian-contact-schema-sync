@@ -1,5 +1,6 @@
 import { Modal } from "obsidian";
 import type { SyncReport } from "../types";
+import { getAffectedFileNames } from "./sync-preview-summary";
 
 export class SyncPreviewModal extends Modal {
   constructor(
@@ -12,22 +13,29 @@ export class SyncPreviewModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: `Sync Preview (${this.report.updated}/${this.report.total} changed)` });
+    const affectedFiles = getAffectedFileNames(this.report.notes);
 
-    for (const note of this.report.notes) {
-      const section = contentEl.createDiv();
-      section.createEl("h3", { text: note.path });
-      section.createEl("p", { text: `Added fields: ${note.addedFields.join(", ") || "none"}` });
-      section.createEl("p", { text: `Removed fields: ${note.removedFields.join(", ") || "none"}` });
-      section.createEl("p", { text: `Deprecated fields: ${note.deprecatedFields.join(", ") || "none"}` });
-      section.createEl("p", { text: `Changed field types: ${note.coercedFields.join(", ") || "none"}` });
-      section.createEl("p", { text: `Added sections: ${note.addedSections.join(", ") || "none"}` });
-      section.createEl("p", { text: `Removed sections: ${note.removedSections.join(", ") || "none"}` });
-      section.createEl("p", { text: `Updated sections: ${note.updatedSections.join(", ") || "none"}` });
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "Sync Preview" });
+    contentEl.createEl("p", {
+      text:
+        affectedFiles.length === 0
+          ? "No files need updates."
+          : `${affectedFiles.length} file${affectedFiles.length === 1 ? "" : "s"} will be updated.`
+    });
+
+    if (affectedFiles.length > 0) {
+      const details = contentEl.createEl("details");
+      const summary = details.createEl("summary", { text: "Show affected files" });
+      summary.style.cursor = "pointer";
+
+      const list = details.createEl("ul");
+      for (const fileName of affectedFiles) {
+        list.createEl("li", { text: fileName });
+      }
     }
 
-    if (this.onApply) {
+    if (this.onApply && affectedFiles.length > 0) {
       const applyButton = contentEl.createEl("button", { text: "Apply changes" });
       applyButton.onclick = async () => {
         await this.onApply?.();
